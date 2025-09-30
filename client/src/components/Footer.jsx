@@ -47,7 +47,7 @@ const FooterCom = () => {
             </FooterLinkGroup>
             </div>
             </div>
-            
+      
                 <div>
                 <FooterTitle title="Legal" />
             <FooterLinkGroup col>
