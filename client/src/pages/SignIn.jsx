@@ -3,6 +3,7 @@ import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { signInStart,signInSuccess,signInFailure } from "../redux/user/userSlice"
 import { useDispatch, useSelector } from "react-redux"
+import OAuth from "../components/OAuth"
 
 const SignIn = () => {
   const dispatch = useDispatch();
@@ -79,6 +80,7 @@ const SignIn = () => {
                 ) : "Sign In"
               }
             </Button>
+            <OAuth />
           </form>
 
 
