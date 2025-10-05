@@ -1,49 +1,57 @@
 import { Alert, Button, TextInput } from 'flowbite-react'
 import React, { useEffect, useRef, useState } from 'react'
-import {useSelector} from 'react-redux'
+import { useSelector } from 'react-redux'
 import axios from 'axios'
 import { CircularProgressbar } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
+import { updateFailure, updateSuccess, updateStart } from '../redux/user/userSlice';
+import { useDispatch } from 'react-redux';
 
 
 const DashProfile = () => {
-    const { currentUser, error, loading } = useSelector((state) => state.user);
-    const [imageFile, setImageFile] = useState(null);
-    const [imageFileUrl, setImageFileUrl] = useState(null);
-    const [imageFileUploadProgress, setImageFileUploadProgress] = useState(null);
-     const [imageFileUploadError, setImageFileUploadError] = useState(null);
+  const { currentUser, error, loading } = useSelector((state) => state.user);
+  const [imageFile, setImageFile] = useState(null);
+  const [imageFileUrl, setImageFileUrl] = useState(null);
+  const [imageFileUploadProgress, setImageFileUploadProgress] = useState(null);
+  const [imageFileUploadError, setImageFileUploadError] = useState(null);
+  
+  
+  const filePickerRef = useRef();
+  // user profile form update functionality
+  const [formData, setFormData] = useState({});
+  const dispatch = useDispatch();
   const [imageFileUploading, setImageFileUploading] = useState(false);
-    const [formData, setFormData] = useState({})
-    const filePickerRef = useRef();
+  const [updateUserSucess, setUpdateUserSucess] = useState(null);
 
-    const handleImageChange = (e) =>{
-      const file = e.target.files[0];
-      if (file) {
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
       if (file.size > 2 * 1024 * 1024 || !["image/jpeg", "image/png", "image/jpg"].includes(file.type)) {
         setImageFileUploadError
-        ("Could not upload image (File must be less than allowed size)")
+          ("Could not upload image (File must be less than allowed size)")
       }
-      
+
       setImageFile(file);
       setImageFileUrl(URL.createObjectURL(file));
     }
   }
-    useEffect(()=>{
-      if(imageFile){
-        uploadImage();
-      }
-    }, [imageFile]);
+  useEffect(() => {
+    if (imageFile) {
+      uploadImage();
+    }
+  }, [imageFile]);
 
-    const uploadImage = async()=>{
-      setImageFileUploadError(null)
-      try {
-        const formDataCloud = new FormData();
+  const uploadImage = async () => {
+    setImageFileUploadError(null)
+    try {
+      const formDataCloud = new FormData();
       formDataCloud.append("file", imageFile);
       formDataCloud.append("upload_preset", "react_profile_upload");
       formDataCloud.append("folder", "users/profiles");
 
       const res = await axios.post(
-        "https://api.cloudinary.com/v1_1/dujkaa9bu/image/upload", 
+        "https://api.cloudinary.com/v1_1/dujkaa9bu/image/upload",
         formDataCloud,
         {
           onUploadProgress: (progressEvent) => {
@@ -59,53 +67,88 @@ const DashProfile = () => {
       setImageFileUploading(false);
       setImageFileUploadProgress(null);
 
-      } catch (error) {
-        console.error(error);
+    } catch (error) {
+      console.error(error);
       setImageFileUploadError("Could not upload image (File must be less than allowed size)");
       setImageFileUploading(false);
       setImageFileUploadProgress(null);
       setImageFile(null);
       setImageFileUrl(null);
-      }
     }
+  }
+
+
+  // update functionaity
+  const handleChange = (e) =>{
+    setFormData({...formData,[e.target.id]:e.target.value})
+  }
+  
+  const handleSubmit = async(e)=>{
+    e.preventDefault();
+    if(Object.keys(formData).length === 0){
+      return;
+    }
+    if(imageFileUploading){
+      return;
+    }
+    try {
+      dispatch(updateStart());
+      const res = await fetch(`/api/user/update/${currentUser._id}`,{
+        method:"PUT",
+        headers:{
+          'Content-Type':'application/json',
+        },
+        body: JSON.stringify(formData),
+      })
+      const data = await res.json();
+      if(!res.ok){
+        dispatch(updateFailure(data.message));
+      }else{
+        dispatch(updateSuccess(data));
+        setUpdateUserSucess("User updated successfully")
+      }
+    } catch (error) {
+      dispatch(updateFailure(error.message));
+    }
+  }
 
   return (
     <div className='max-w-lg mx-auto p-3 w-full'>
       <h1 className='my-7 text-center font-semibold text-3xl'>Profile</h1>
-      
-      <form className='flex flex-col gap-4'>
-        
+
+      <form className='flex flex-col gap-4' onSubmit={handleSubmit}>
+
         <input type="file" accept='image/*' onChange={handleImageChange} ref={filePickerRef} hidden />
 
-        <div className='relative w-32 h-32 self-center cursor-pointer shadow-md overflow-hidden rounded-full' onClick={()=>filePickerRef.current.click()}>
+        <div className='relative w-32 h-32 self-center cursor-pointer shadow-md overflow-hidden rounded-full' onClick={() => filePickerRef.current.click()}>
           {imageFileUploadProgress && (
             <CircularProgressbar value={imageFileUploadProgress || 0} text={`${imageFileUploadProgress}%`} strokeWidth={5} styles={{
-              root:{
-                width:'100%',
-                height:'100%',
-                position:'absolute',top:0,left:0,
+              root: {
+                width: '100%',
+                height: '100%',
+                position: 'absolute', top: 0, left: 0,
               },
-              path:{
-                stroke:`rgba(62,152,99,${imageFileUploadProgress / 100})`
+              path: {
+                stroke: `rgba(62,152,99,${imageFileUploadProgress / 100})`
               }
             }} />
           )}
-            <img src={imageFileUrl || currentUser.profilePicture} alt="user_profile_photo" className={`rounded-full w-full h-full object-cover border-8 border-[lightgray] ${imageFileUploadProgress && imageFileUploadProgress < 100 && 'opacity-60'}`} />
+          <img src={imageFileUrl || currentUser.profilePicture} alt="user_profile_photo" className={`rounded-full w-full h-full object-cover border-8 border-[lightgray] ${imageFileUploadProgress && imageFileUploadProgress < 100 && 'opacity-60'}`} />
         </div>
 
 
-        
-          {imageFileUploadError && (
-            <Alert color='failure'>{imageFileUploadError}</Alert>
-          )}
-        
 
-        <TextInput type='text' id='username' placeholder='username' defaultValue={currentUser.username} />
-        <TextInput type='email' id='email' placeholder='username' defaultValue={currentUser.email} />
-        <TextInput type='password' id='password' placeholder="password" />
+        {imageFileUploadError && (
+          <Alert color='failure'>{imageFileUploadError}</Alert>
+        )}
+
+
+        <TextInput type='text' id='username' placeholder='username' defaultValue={currentUser.username} onChange={handleChange} />
+        <TextInput type='email' id='email' placeholder='username' defaultValue={currentUser.email} onChange={handleChange} />
+        <TextInput type='password' id='password' placeholder="password" onChange={handleChange} />
 
         <Button type='submit' className='bg-gradient-to-br from-purple-600 to-blue-500 p-4 text-white' outline>
-            Update
+          Update
         </Button>
 
       </form>
@@ -114,6 +157,11 @@ const DashProfile = () => {
         <span className='cursor-pointer'>Delete Account</span>
         <span className='cursor-pointer'>Sign Out</span>
       </div>
+      {updateUserSucess && (
+        <Alert color='success' className='mt-5'>
+        {updateUserSucess}
+      </Alert>
+      )}
     </div>
   )
 }
