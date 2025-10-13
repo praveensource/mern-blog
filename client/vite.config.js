@@ -11,4 +11,7 @@ export default defineConfig({
     },
   },
   plugins: [react()],
+  define: {
+    global: 'window', // Vite doesn't provide `global` by default
+  },
 })
