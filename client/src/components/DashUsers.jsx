@@ -1,0 +1,150 @@
+import { Table, TableBody, TableCell, TableHead, TableHeadCell, TableRow, Modal, Button, ModalHeader, ModalBody } from 'flowbite-react';
+import React, { useEffect, useState } from 'react';
+import {useSelector} from 'react-redux'
+import {FaCheck, FaTimes} from 'react-icons/fa'
+import { HiOutlineExclamationCircle } from 'react-icons/hi';
+
+const DashUsers = () => {
+  const {currentUser} = useSelector((state) => state.user);
+  const [users, setUsers] = useState([]);
+  const [showMore, setShowMore] = useState(true);
+  const [showModal ,setShowModal] =  useState(false);
+  const [userIdToDelete, setuserIdToDelete] = useState('');
+
+  useEffect(()=>{
+    const fetchUsers = async() =>{
+      try {
+        const res = await fetch(`/api/user/getusers`);
+        const data = await res.json();
+
+        if(res.ok){
+          setUsers(data.users);
+          if(data.users.length < 9){
+            setShowMore(false);
+          }
+        }
+      } catch (error) {
+        console.log(error.message)
+      }
+    };
+    if(currentUser.isAdmin){
+      fetchUsers();
+    }
+  }, [currentUser._id]);
+
+  const handleShowMore = async() =>{
+    const startIndex = users.length;
+    try {
+      const res = await fetch(`/api/post/getusers?startIndex=${startIndex}`);
+      const data = await res.json();
+      if(res.ok){
+        setUsers((prev)=>[...prev, ...data.users]);
+        if(data.users.length < 9){
+          setShowMore(false);
+        }
+      }
+    } catch (error) {
+      console.log(error.message)
+    }
+  }
+
+//   const handleDeleteUser = async () => {
+//     setShowModal(false);
+//     try {
+//       const res = await fetch(`/api/post/deletepost/${postIdToDelete}/${currentUser._id}`, {
+//   method: "DELETE",
+ 
+// });
+
+//       const data = await res.json();
+//       if (!res.ok) {
+//         console.log(data.message);
+//       } else {
+//         setUserPosts((prev) =>
+//           prev.filter((post) => post._id !== postIdToDelete)
+//         );
+//       }
+//     } catch (error) {
+//       console.log(error.message);
+//     }
+//   };
+const handleDeleteUser = async() =>{
+
+}
+
+  return (
+    <div className='table-auto overflow-x-scroll md:mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500'>
+      {currentUser.isAdmin && users.length > 0 ? (
+        <>
+          <Table hoverable className='shadow-md'>
+            <TableHead>
+              <TableHeadCell>
+                Date created
+              </TableHeadCell>
+              <TableHeadCell>User image</TableHeadCell>
+              <TableHeadCell>Username</TableHeadCell>
+              <TableHeadCell>Email</TableHeadCell>
+              <TableHeadCell>Admin</TableHeadCell>
+              <TableHeadCell>Delete</TableHeadCell>
+              
+            </TableHead>
+            {/* content */}
+            {users.map((user)=>(
+              
+              <TableBody key={user._id} className='divide-y'>
+                <TableRow className='bg-white dark:border-gray-700 dark:bg-gray-800'>
+                  <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
+                  <TableCell>
+                    
+                      <img src={user.profilePicture} alt={user.username} className='w-10 h-10 object-cover rounded-full' />
+                   
+                  </TableCell>
+
+                  <TableCell>
+                    {user.username}
+                  </TableCell>
+                  <TableCell>{user.email}</TableCell>
+                  <TableCell>{user.isAdmin ? (<FaCheck className="text-green-500" />) : (<FaTimes className="text-red-500" />)}
+                  </TableCell>
+
+                  <TableCell>
+                    <span onClick={()=>{
+                      setShowModal(true);
+                      setuserIdToDelete(user._id);
+                    }} className='font-medium text-red-500 hover:underline cursor-pointer'>Delete</span>
+                  </TableCell>
+                  
+                </TableRow>
+              </TableBody>
+            ))}
+          </Table>
+          {showMore && (
+            <button onClick={handleShowMore} className='w-full text-teal-500 self-center text-sm py-7'>
+              Show more
+            </button>
+          )}
+        </>
+      ):(
+        <p>You have no users yet</p>
+      )}
+      <Modal show={showModal} onClose={()=>setShowModal(false)} popup size='md'>
+              <ModalHeader />
+              <ModalBody>
+                <div className="text-center">
+                  <HiOutlineExclamationCircle className='h-14 w-14 text-gray-400 dark:text-gray-200 mb-4 mx-auto' />
+                  <h3 className='mb-5 text-lg text-gray-500 dark:text-gray-400'>Are you sure your want to delete this user?</h3>
+      
+                  {/* yes and no */}
+                  <div className='flex justify-center gap-4'>
+                    <Button className='bg-red-500' outline onClick={handleDeleteUser}>Yes i'm sure</Button>
+      
+                    <Button color={'gray'} onClick={()=>setShowModal(false)}>No, cancel</Button>
+                  </div>
+                </div>
+              </ModalBody>
+            </Modal>
+    </div>
+  )
+}
+
+export default DashUsers
