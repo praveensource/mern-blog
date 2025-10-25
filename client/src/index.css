@@ -9,6 +9,7 @@ html, body {
 
 .post-content p{
   margin-bottom: 0.5rem;
+  
 }
 
 .post-content h1{
@@ -16,6 +17,7 @@ html, body {
   font-weight: 600;
   font-family: sans-serif;
   margin: 1.5rem 0;
+
 }
 
 .post-content h2{
@@ -28,4 +30,12 @@ html, body {
   text-decoration: none;
 
 }
+.post-content{
+  @apply bg-white text-gray-700 dark:bg-[rgb(16,23,42)] dark:text-gray-200;
+}
+.dark .post-content * {
+  background-color: transparent !important;
+  color: #e5e7eb !important; 
+}
+
 
