@@ -82,6 +82,15 @@ const handleLike = async(commentId) =>{
   }
 }
 
+const handleEdit = async(comment, editComment) =>{
+  setComments(
+    comments.map((c) => 
+    c._id === comment._id ? {...c,content:editComment} : c)
+  )
+}
+
+
+
   return (
     <div className='max-w-2xl mx-auto w-full p-3'>
       {currentUser ? (
@@ -131,7 +140,7 @@ const handleLike = async(commentId) =>{
           <Comment
            key={
             comment._id}
-            comment={comment} onLike={handleLike}
+            comment={comment} onLike={handleLike} onEdit = {handleEdit}
            />
         )}
         </>
